@@ -1,5 +1,4 @@
 pergunta
-qual o objetivo do seminario?
-quais foram as tecnologias utilizadas?
-como posso fazer isso no GCP?
-Posso utilizar essa mesma estrutura e utilizar a OPENAI?
+qual versao do boto 3 foi utilizada?
+como acontece o trigger entre o s3 e o step function? é um lambda?
+como está sendo guardada a key do gemini? 

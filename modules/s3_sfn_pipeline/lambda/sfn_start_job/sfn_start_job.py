@@ -166,52 +166,100 @@ def process_questions_with_gemini_structured(client, data_processed):
 
         # Create comprehensive prompt for structured analysis
         prompt = f"""
-        Você é um especialista em arquitetura de dados e inteligência artificial na AWS, apresentando sobre o projeto "Build with AI - GDG". 
+        Você é um especialista em arquitetura de dados e inteligência artificial na AWS, apresentando sobre o projeto "Build with AI - GDG" para o Google Developer Group. 
 
         ## CONTEXTO DO PROJETO:
-        Este é um projeto de pipeline de dados serverless na AWS que demonstra a integração entre serviços AWS e APIs de IA generativa (Gemini). O projeto foi desenvolvido para uma apresentação no Google Developer Group (GDG) sobre como construir soluções com IA.
+        Este é um projeto de demonstração de um pipeline de dados serverless completo na AWS que processa arquivos CSV contendo perguntas e os enriquece usando a API do Google Gemini AI. O projeto foi construído com princípios de Infrastructure as Code e padrões serverless modernos para demonstrar uma solução de IA pronta para produção.
 
-        ## ARQUITETURA DO PROJETO:
+        ## OBJETIVO DA APRESENTAÇÃO:
+        Demonstrar de forma prática como construir e orquestrar soluções de inteligência artificial generativa utilizando uma arquitetura serverless robusta na AWS, capacitando a audiência do GDG a aplicar esses conceitos em seus próprios projetos de IA, enfatizando facilidade de desenvolvimento, segurança e resiliência operacional.
+
+        ## ARQUITETURA SERVERLESS COMPLETA:
         
-        ### Componentes Principais:
-        1. **S3 Bucket**: Armazenamento de arquivos CSV com perguntas
-        2. **EventBridge**: Detecta uploads no S3 e dispara o pipeline
-        3. **Step Functions**: Orquestra o fluxo de processamento com retry logic
-        4. **Lambda Functions**: 
-           - `sfn_start_job`: Lê CSV, processa com Gemini e salva resultado
-           - `sfn_verify_status`: Verifica status do processamento
-        5. **Secrets Manager**: Armazena chave da API do Gemini de forma segura
-        6. **IAM Roles**: Controle de acesso entre serviços
+        ### 🔄 Componentes da Arquitetura Event-Driven:
+        1. **S3 Buckets**: Armazenamento de entrada e saída com criptografia
+        2. **EventBridge**: Detecção automática de eventos e roteamento
+        3. **Step Functions**: Orquestração de workflow com retry exponencial (até 20 tentativas)
+        4. **Lambda Functions** (Python 3.12, 512MB, 60s timeout):
+           - `sfn_start_job`: Processamento principal com Gemini AI
+           - `sfn_verify_status`: Monitoramento de status
+        5. **Secrets Manager**: Gerenciamento seguro da chave API do Gemini
+        6. **IAM Roles**: Controle de acesso com princípio de privilégio mínimo
+        7. **CloudWatch**: Monitoramento e observabilidade integrados
 
-        ### Fluxo de Processamento:
-        1. Upload de arquivo CSV no S3
-        2. EventBridge detecta o evento e dispara Step Function
-        3. Step Function inicia Lambda de processamento
-        4. Lambda lê CSV com módulo csv nativo, extrai perguntas
-        5. Envia perguntas para API do Gemini
-        6. Salva resposta processada de volta no S3
-        7. Step Function monitora status com retry exponencial
+        ### 📊 Fluxo de Processamento Detalhado:
+        1. **Upload**: Arquivo CSV carregado no bucket S3 de entrada
+        2. **Detecção**: EventBridge detecta evento S3 ObjectCreated
+        3. **Orquestração**: Step Functions inicia state machine
+        4. **Processamento**: Lambda lê CSV, extrai perguntas da coluna "pergunta"
+        5. **IA**: Integração com Gemini AI usando structured output e Pydantic
+        6. **Retry**: Lógica de retry exponencial (15s inicial, backoff 2.0x, max 900s)
+        7. **Armazenamento**: Resultado JSON estruturado salvo no bucket de saída
+        8. **Monitoramento**: Status verificado via Lambda de verificação
 
-        ### Tecnologias Utilizadas:
-        - **Infrastructure as Code**: Terraform
-        - **Linguagem**: Python 3.12
-        - **Bibliotecas**: boto3, google-genai (sem pandas para otimização)
-        - **Arquitetura**: Serverless (Lambda + Step Functions)
-        - **Monitoramento**: CloudWatch integrado
-        - **Segurança**: IAM roles com least privilege
+        ### 🛠️ Stack Tecnológico:
+        - **Infrastructure as Code**: Terraform (completa automação)
+        - **Runtime**: Python 3.12 com arquitetura x86_64
+        - **Dependências Principais** (version-pinned):
+          - `boto3==1.38.42` (AWS SDK)
+          - `google-genai==1.21.1` (Gemini AI client)
+          - `pydantic==2.11.7` (validação de dados)
+          - `requests==2.32.4` (HTTP client)
+        - **Padrões**: Serverless, event-driven, microservices
+        - **Segurança**: Encryption at rest, IAM least privilege, secrets management
 
-        ## INSTRUÇÕES:
+        ### 🔒 Características de Segurança e Produção:
+        - Criptografia server-side no S3
+        - Chaves API armazenadas no Secrets Manager
+        - IAM roles com permissões mínimas necessárias
+        - Structured logging para auditoria
+        - Retry logic para resiliência
+        - Monitoramento via CloudWatch
+
+        ### 💰 Modelo de Custos Pay-per-Use:
+        - Lambda: Cobrança por invocação e duração
+        - S3: Armazenamento e transferência
+        - Step Functions: Por transição de estado
+        - Gemini API: Por token processado
+        - Sem custos de infraestrutura ociosa
+
+        ### 🌐 Flexibilidade e Adaptabilidade:
+        - **Cloud Agnostic**: Princípios aplicáveis ao GCP (Cloud Storage, Cloud Functions, Workflows)
+        - **AI Provider Agnostic**: Facilmente adaptável para OpenAI, Anthropic, etc.
+        - **Escalabilidade**: Auto-scaling nativo dos serviços serverless
+        - **Extensibilidade**: Modular para adicionar novos processamentos
+
+        ## FORMATO DE ENTRADA E SAÍDA:
+        
+        ### Entrada (CSV):
+        ```csv
+        pergunta
+        qual o objetivo do seminario?
+        quais foram as tecnologias utilizadas?
+        ```
+
+        ### Saída (JSON Estruturado):
+        - Análise estruturada com Pydantic models
+        - Categorização automática das perguntas
+        - Identificação de serviços AWS mencionados
+        - Níveis técnicos (basic/intermediate/advanced)
+        - Resumo executivo e tópicos-chave
+        - Metadados de processamento
+
+        ## INSTRUÇÕES PARA ANÁLISE:
         Para cada pergunta fornecida, você deve:
-        1. Responder de forma clara e técnica
-        2. Categorizar a pergunta (ex: "arquitetura", "implementação", "comparação", "custos", etc.)
-        3. Definir o nível técnico (basic, intermediate, advanced)
-        4. Identificar serviços AWS mencionados ou relevantes
-        5. Fornecer resposta detalhada considerando o contexto do projeto
+        1. **Responder tecnicamente** considerando o contexto completo do projeto
+        2. **Categorizar** (Objetivo, Tecnologias, Arquitetura, Implementação, Comparação, Adaptabilidade, Custos, Segurança, etc.)
+        3. **Classificar nível técnico** (basic, intermediate, advanced)
+        4. **Identificar serviços AWS** mencionados ou relevantes à resposta
+        5. **Manter foco educacional** para audiência do GDG
+        6. **Enfatizar aspectos práticos** e aplicabilidade real
+        7. **Destacar benefícios** da arquitetura serverless e IA generativa
 
         ## PERGUNTAS A ANALISAR:
         {json.dumps(questions, indent=2, ensure_ascii=False)}
 
-        Analise cada pergunta individualmente e forneça uma resposta estruturada. Mantenha o foco na demonstração prática de como construir soluções com IA na AWS.
+        Analise cada pergunta individualmente fornecendo respostas detalhadas que demonstrem o valor prático desta arquitetura serverless com IA para desenvolvedores e arquitetos de soluções.
         """
 
         # Use structured output with Pydantic model

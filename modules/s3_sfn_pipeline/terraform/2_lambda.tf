@@ -5,6 +5,7 @@ variable "layer_name" {
 resource "null_resource" "install_layer_dependencies" {
   triggers = {
     requirements_hash = filemd5("${var.lambda_path}/requirements.txt")
+    always_run = timestamp()
   }
 
   provisioner "local-exec" {
